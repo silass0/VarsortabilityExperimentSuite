@@ -403,7 +403,7 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
     Args:
         B (np.ndarray): [d, d] binary adj matrix of DAG
         n (int): num of samples
-        sem_type (str): mlp, mim, gp, gp-add
+        sem_type (str): polynomial-m, mlp, mim, gp, gp-add
             gp-add-lach Lachapelle A.5
         noise_scale (np.ndarray): scale parameter of additive noise, default all ones
 
@@ -411,7 +411,7 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
         X (np.ndarray): [n, d] sample matrix
     """
     assert np.sum(B) == np.count_nonzero(B), 'Adjacency matrix can only contain 0s or 1s.'
-    def _simulate_single_equation(X, scale):
+    def _simulate_single_equation(X, scale, ws=None):
         """X: [n, num of parents], x: [n]"""
         z = np.random.normal(scale=scale, size=n)
         pa_size = X.shape[1]
@@ -420,7 +420,18 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
                 # source nodes have [1,2] variance here
                 z = np.random.normal(scale=np.sqrt(2.5)*scale, size=n)
             return z
-        if sem_type == 'mlp':
+        if sem_type.split("-")[0] == "polynomial":
+            # gaussian case covered by first assignment
+            if sem_type.split("-")[2] == 'exp':
+                z = np.random.exponential(scale=scale, size=n)
+            elif sem_type.split("-")[2] == 'gumbel':
+                a = np.sqrt(6)/np.pi * scale
+                z = np.random.gumbel(scale=a, size=n)
+            elif sem_type.split("-")[2] == 'uniform':
+                a = scale * np.sqrt(3)
+                z = np.random.uniform(low=-a, high=a, size=n) 
+            x = sum([X**(i+1) @ ws[i,:] for i in range(int(sem_type.split("-")[1])-1)]) + z
+        elif sem_type == 'mlp':
             hidden = 100
             W1 = np.random.uniform(low=0.5, high=2.0, size=[pa_size, hidden])
             W1[np.random.rand(*W1.shape) < 0.5] *= -1
@@ -451,12 +462,21 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
     d = B.shape[0]
     scale_vec = noise_scale if (noise_scale is not None) else np.ones(d)
     if sem_type == 'gp-add-lach':
-        scale_vec = np.sqrt(np.random.uniform(low=.4, high=.8, size=d))
+        scale_vec = np.sqrt(np.random.uniform(low=.4, high=.8, size=d))        
     X = np.zeros([n, d])
     G = ig.Graph.Adjacency(B.tolist())
     ordered_vertices = G.topological_sorting()
     assert len(ordered_vertices) == d
-    for j in ordered_vertices:
-        parents = G.neighbors(j, mode=ig.IN)
-        X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j])
+    if sem_type.split("-")[0] == "polynomial":
+        m = int(sem_type.split("-")[1])
+        Ws = np.zeros((m, B.shape[0], B.shape[1]))
+        for i in range(m):
+            Ws[i, :, :] = simulate_parameter(B, ((-2, -0.5), (0.5, 2.0)))
+        for j in ordered_vertices:
+            parents = G.neighbors(j, mode=ig.IN)
+            X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j], ws=Ws[:, parents, j])
+    else:
+        for j in ordered_vertices:
+            parents = G.neighbors(j, mode=ig.IN)
+            X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j])
     return X

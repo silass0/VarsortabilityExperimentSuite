@@ -44,7 +44,7 @@ class DataGenerator:
             noise_scales = np.random.uniform(l, u, size=description.n_nodes)
         else:
             noise_scales = None
-        if description.noise in ['gp-add', 'mim', 'mlp', 'gp', 'gp-add-lach']:
+        if description.noise in ['gp-add', 'mim', 'mlp', 'gp', 'gp-add-lach'] or description.noise.split('-')[0] == 'polynomial':
             data = utils.simulate_nonlinear_sem(B_true,
                                              description.n_obs,
                                              sem_type=description.noise,
@@ -220,6 +220,7 @@ if __name__ == "__main__":
         "noise_distributions": [
             # utils.NoiseDistribution("gauss", (1, 1)),
             utils.NoiseDistribution("gauss", (0.5, 2)),
+            #utils.NoiseDistribution("polynomial-2-gauss", (0.5, 2))
             # utils.NoiseDistribution("exp", (0.5, 2)),
             # utils.NoiseDistribution("gumbel", (0.5, 2)),
         ],
