@@ -34,7 +34,7 @@ opt-einsum==3.3.0
 pandas==1.1.5
 patsy==0.5.3
 Pillow==8.4.0
-pkg_resources==0.0.0
+#pkg_resources==0.0.0
 platformdirs==2.4.0
 protobuf==3.19.6
 pyparsing==3.0.9
