@@ -15,12 +15,14 @@ gast==0.2.2
 gitdb==4.0.9
 GitPython==3.1.18
 google-pasta==0.2.0
+graphviz==0.14.2
 grpcio==1.43.0
 h5py==3.1.0
 idna==3.4
 igraph==0.9.11
 importlib-metadata==4.8.3
 importlib-resources==5.4.0
+javabridge==1.0.19
 joblib==1.1.1
 jsonschema==3.2.0
 Keras-Applications==1.0.8
@@ -42,8 +44,10 @@ pyrsistent==0.18.0
 python-dateutil==2.8.2
 pytz==2022.5
 PyYAML==6.0
+#pycausal==1.2.1: https://github.com/bd2kccd/py-causal (use git+https)
 ray==2.0.1
 requests==2.27.1
+rpy2==3.3.6
 scikit-learn==0.24.2
 scipy==1.5.4
 seaborn==0.11.2
