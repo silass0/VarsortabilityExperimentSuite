@@ -58,7 +58,7 @@ def sortnregress(X, regularisation='1-p', random_order=False):
 
     return W
 
-def sortnregress_poly(X, degree=2, max_indegree=3, include_interactions=True, random_order=False):
+def sortnregress_poly(X, degree=2, max_indegree=3, random_order=False):
     """Takex n x d data, assumes order is given by increased variance,
     and regresses each node polynomially onto those with lower variance, using
     edge coefficients as structure estimates. Features are eliminated #TODO
@@ -92,10 +92,10 @@ def sortnregress_poly(X, degree=2, max_indegree=3, include_interactions=True, ra
             W2 = np.zeros((len(covariates), len(covariates)))
         else: #will not check lesser subsets, as they will result in lower score
             subsets = list(itertools.combinations(covariates, max_indegree))
-            W1 = np.zeros((len(max_indegree)))
-            W2 = np.zeros((len(max_indegree), len(max_indegree)))
+            W1 = np.zeros((max_indegree))
+            W2 = np.zeros((max_indegree, max_indegree))
         for subset in subsets:
-            model = make_pipeline(PolynomialFeatures(degree=degree), LinearRegression())
+            model = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False), LinearRegression())
             model.fit(X[:, subset], X[:, target].ravel())
             score = model.score(X[:, subset], X[:, target].ravel())
             if score > best_model["score"]:
@@ -126,12 +126,13 @@ def sortnregress_poly(X, degree=2, max_indegree=3, include_interactions=True, ra
 
         #aggregate polynomial weights and interactions into a single output matrix W 
         heuristic = {"lin":0.7, "quad":0.2, "inters":0.1} #for single cov, target
-        for i, cov in enumerate(best_model["subset"]):
+        for i, cov in enumerate(subset):
             w = 0
             w += np.abs(W1[i]) * heuristic["lin"]
             w += np.abs(W2[i, i]) * heuristic["quad"]
             inters = [w for j, w in enumerate(W2[i, :]) if j!=i]
-            w += np.abs(np.mean(inters)) * heuristic["inters"]
+            if len(inters) > 0:
+                w += np.abs(np.mean(inters)) * heuristic["inters"]
             W[cov, target] = w
         #Possible TODO: make it so interactions only exists for dependent covariates (but regression should assign interactions with small weights if indep)
         #Possible TODO: Develop better heuristic for weigh aggregation (importance for various weight degrees)

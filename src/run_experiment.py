@@ -41,7 +41,7 @@ def visualize(params, data_params):
     """ Visualization """
     n_nodes = max(data_params['n_nodes'])
     viz = Visualizer(params['version_name'], params['base_dir'], overwrite_prev=False, thres_type=params['thres_type'], n_nodes=n_nodes, threshold=params['thres'])
-    acc_measures = ["sid", "shd"]
+    acc_measures = ["shd"]# ["sid", "shd"]
     if params['MEC']: acc_measures += ["mec_sid", "mec_shd"]
     for noise in [["gauss"], ["exp"], ["uniform"]]:
         for acc_measure in acc_measures:
@@ -106,8 +106,9 @@ if __name__ == "__main__":
         # algorithms from _ExperimentRunner as strings
         'algorithms': [
             # 'golemEV_golemNV_orig',
-            'notearsLinear',
+            #'notearsLinear',
             'sortnregressIC',
+            'sortnregressPOLY',
         ]
     }
     params['base_dir'] = os.path.join(params['exp_dir'], params['name'])

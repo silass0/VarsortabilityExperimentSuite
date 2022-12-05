@@ -23,6 +23,7 @@ def thresholds(x):
             "pc":                         'bidirected',  # favourable
             "randomregressIC":            -np.inf,
             "sortnregressIC":             -np.inf,
+            "sortnregressPOLY":           -np.inf,
             "notearsLinear":              x,
             "golemEV_orig":               x,
             "golemNV_orig":               x,

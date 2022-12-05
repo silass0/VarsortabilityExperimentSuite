@@ -179,6 +179,11 @@ class ExperimentRunner:
         return sortnregress(dataset.data, regularisation="bic", random_order=False)
 
     @_algo_decorator
+    def sortnregressPOLY(self, dataset):
+        from sortnregress import sortnregress_poly
+        return sortnregress_poly(dataset.data, random_order=False)
+
+    @_algo_decorator
     def empty(self, dataset):
         d = dataset.description.n_nodes
         return np.zeros((d, d))
