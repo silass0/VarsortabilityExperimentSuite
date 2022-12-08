@@ -58,7 +58,7 @@ def sortnregress(X, regularisation='1-p', random_order=False):
 
     return W
 
-def sortnregress_poly(X, degree=2, max_indegree=3, random_order=False):
+def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
     """Takex n x d data, assumes order is given by increased variance,
     and regresses each node polynomially onto those with lower variance, using
     edge coefficients as structure estimates. Features are eliminated #TODO
@@ -73,8 +73,6 @@ def sortnregress_poly(X, degree=2, max_indegree=3, random_order=False):
 
     d = X.shape[1]
     W = np.zeros((d, d))
-    #W1 = np.zeros((d, d)) #linear regression coefficients, (cov, target)
-    #W2 = np.zeros((d, d, d)) #quadratic/interaction regression coefficients, (target, (cov1, cov2))
     increasing = np.argsort(np.var(X, 0))
 
     if random_order:

@@ -43,7 +43,7 @@ def visualize(params, data_params):
     viz = Visualizer(params['version_name'], params['base_dir'], overwrite_prev=False, thres_type=params['thres_type'], n_nodes=n_nodes, threshold=params['thres'])
     acc_measures = ["shd"]# ["sid", "shd"]
     if params['MEC']: acc_measures += ["mec_sid", "mec_shd"]
-    for noise in [["gauss"], ["exp"], ["uniform"]]:
+    for noise in [["gauss"], ["exp"], ["uniform"], ["polynomial-2-gauss"]]:
         for acc_measure in acc_measures:
             viz.boxplot(acc_measure=acc_measure, filters={
                 "n_nodes": n_nodes, 
@@ -63,10 +63,10 @@ def viz_compare(params, data_params, name1, name2):
         n_nodes=n_nodes, 
         threshold=params['thres']
     )
-    acc_measures = ["shd"]  # ["sid", "shd"]
+    acc_measures = ["shd", "tpr", "fpr"]  # ["sid", "shd"]
     if params['MEC']: acc_measures += ["mec_sid_upper", "mec_shd"]
     for acc_measure in acc_measures:
-        for noise in [["gauss"], ["exp"], ["gumbel"], ["uniform"]]:
+        for noise in [["gauss"], ["exp"], ["gumbel"], ["uniform"], ["polynomial-2-gauss"]]:
             for var in ["(1, 1)", "(0.5, 2)", "(2, 3)"]:
                 for graph in ["ER-2", "ER-4", "SF-4"]:
                     viz.boxplot(acc_measure=acc_measure, filters={
@@ -88,11 +88,11 @@ def run(params, version, scaler, data_params):
 if __name__ == "__main__":
     # data generation
     data_params = {
-        "n_repetitions": 10,
+        "n_repetitions": 5,
         "graphs": ["ER-2"],
-        "noise_distributions": [utils.NoiseDistribution("gauss", (0.5, 2))],
+        "noise_distributions": [utils.NoiseDistribution("polynomial-2-gauss", (0.5, 2))],
         "edge_weights":[(0.5, 2)],
-        "n_nodes": [5],
+        "n_nodes": [10],
         "n_obs": [1000],  # for less than ~1000, the tetrad algos fail
     }
 
@@ -108,13 +108,13 @@ if __name__ == "__main__":
             # 'golemEV_golemNV_orig',
             #'notearsLinear',
             'sortnregressIC',
-            'sortnregressPOLY',
+            #'sortnregressPOLY',
         ]
     }
     params['base_dir'] = os.path.join(params['exp_dir'], params['name'])
 
     # create folders
-    utils.set_random_seed(0)
+    utils.set_random_seed(1)
     utils.create_folder(params['exp_dir'])
     utils.create_folder(params['base_dir'])
 

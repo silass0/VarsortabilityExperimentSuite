@@ -89,6 +89,10 @@ class ExperimentRunner:
         runtime = end - start
         W_est = W_est.astype("float64")
 
+        # print(algo_name)
+        # print(W_est)
+        # print(dataset.W_true)
+
         # create results folder
         exp_combo_name = data_file.parent.name
         exp_combo_folder = os.path.join(self.output_folder, exp_combo_name)

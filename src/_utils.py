@@ -398,19 +398,19 @@ def simulate_linear_sem(W, n, sem_type, noise_scale=None):
     return X
 
 
-def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
+def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     """Simulate samples from nonlinear SEM.
 
     Args:
-        B (np.ndarray): [d, d] binary adj matrix of DAG
+        W (np.ndarray): [d, d] weighted linear adj matrix of DAG
         n (int): num of samples
-        sem_type (str): polynomial-m, mlp, mim, gp, gp-add
-            gp-add-lach Lachapelle A.5
+        sem_type (str): polynomial-m, mlp, mim, gp, gp-add, gp-add-lach Lachapelle A.5
         noise_scale (np.ndarray): scale parameter of additive noise, default all ones
 
     Returns:
         X (np.ndarray): [n, d] sample matrix
     """
+    B = np.where(W!=0, 1, 0)
     assert np.sum(B) == np.count_nonzero(B), 'Adjacency matrix can only contain 0s or 1s.'
     def _simulate_single_equation(X, scale, ws=None):
         """X: [n, num of parents], x: [n]"""
@@ -431,7 +431,7 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
             elif sem_type.split("-")[2] == 'uniform':
                 a = scale * np.sqrt(3)
                 z = np.random.uniform(low=-a, high=a, size=n) 
-            x = sum([X**(i+1) @ ws[i,:] for i in range(int(sem_type.split("-")[1])-1)]) + z
+            x = sum([X**(i+1.0) @ ws[i,:] for i in range(int(sem_type.split("-")[1]))]) + z
         elif sem_type == 'mlp':
             hidden = 100
             W1 = np.random.uniform(low=0.5, high=2.0, size=[pa_size, hidden])
@@ -471,8 +471,10 @@ def simulate_nonlinear_sem(B, n, sem_type, noise_scale=None):
     if sem_type.split("-")[0] == "polynomial":
         m = int(sem_type.split("-")[1])
         Ws = np.zeros((m, B.shape[0], B.shape[1]))
-        for i in range(m):
-            Ws[i, :, :] = simulate_parameter(B, ((-2, -0.5), (0.5, 2.0)))
+        Ws[0, :, :] = W
+        for i in range(1, m):
+            _ = simulate_parameter(B, ((-2.0, -0.5), (0.5, 2.0))) #avoid repitition of W due to random seed
+            Ws[i, :, :] = simulate_parameter(B, ((-2.0, -0.5), (0.5, 2.0)))
         for j in ordered_vertices:
             parents = G.neighbors(j, mode=ig.IN)
             X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j], ws=Ws[:, parents, j])
