@@ -12,6 +12,16 @@ if R_LIBS:
     import rpy2.robjects.numpy2ri as rn
     import rpy2.robjects as ro
     rn.activate()
+    install_SID = False 
+    if install_SID:
+        # import rpy2's package module
+        import rpy2.robjects.packages as rpackages
+        # import R's utility package
+        utils = rpackages.importr('utils')
+        # select a mirror for R packages
+        utils.chooseCRANmirror(ind=1) # select the first mirror in the list
+    
+
     ro.r("""library(SID)""")
 
 
@@ -96,6 +106,8 @@ class Evaluator:
             # threshold
             if w_threshold == 'bidirected':
                 # we encode negative numbers for the wrong direction in CPDAGs
+                W_est_thr[W_est_thr < 0.] = 0
+            elif w_threshold == 'MSE_relative':
                 W_est_thr[W_est_thr < 0.] = 0
             else:
                 W_est_thr[np.abs(W_est_thr) < w_threshold] = 0
