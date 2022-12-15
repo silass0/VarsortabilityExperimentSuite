@@ -171,8 +171,8 @@ class ExperimentRunner:
             equal_variances=False, num_iter=episodes, learning_rate=1e-3, seed=np.random.randint(0, 2**32-1), B_init=B_init, checkpoint_iter=None, output_dir=None)
 
     @_algo_decorator
-    def notearsNonlinear(self, dataset, lambda1, lambda2):
-        from notears.nonlinear import notears_nonlinear, NotearsMLP
+    def notearsNonlinear(self, dataset, lambda1=0.01, lambda2=0.01):
+        from notears.notears.nonlinear import notears_nonlinear, NotearsMLP
         model = NotearsMLP(dims=[dataset.description.n_nodes, 10, 1], bias=True)
         return notears_nonlinear(model, dataset.data, lambda1=lambda1,  
             lambda2=lambda2)

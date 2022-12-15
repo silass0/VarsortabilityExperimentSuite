@@ -67,7 +67,7 @@ def viz_compare(params, data_params, name1, name2):
     if params['MEC']: acc_measures += ["mec_sid_upper", "mec_shd"]
     for acc_measure in acc_measures:
         for noise in [["gauss"], ["exp"], ["gumbel"], ["uniform"], ["polynomial-2-gauss"]]:
-            for var in ["(1, 1)", "(0.5, 2)", "(2, 3)"]:
+            for var in ["(1, 1)", "(0.4, 0.7)", "(2, 3)"]:
                 for graph in ["ER-2", "ER-4", "SF-4"]:
                     viz.boxplot(acc_measure=acc_measure, filters={
                         "n_nodes": n_nodes, 
@@ -88,11 +88,11 @@ def run(params, version, scaler, data_params):
 if __name__ == "__main__":
     # data generation
     data_params = {
-        "n_repetitions": 5,
+        "n_repetitions": 2,
         "graphs": ["ER-2"],
-        "noise_distributions": [utils.NoiseDistribution("polynomial-2-gauss", (0.5, 2))],
-        "edge_weights":[(0.5, 2)],
-        "n_nodes": [10],
+        "noise_distributions": [utils.NoiseDistribution("polynomial-2-gauss", (0.4, 0.7))], #polynomial-2-gauss
+        "edge_weights":[(0.2, 0.5)],
+        "n_nodes": [5],
         "n_obs": [1000],  # for less than ~1000, the tetrad algos fail
     }
 
@@ -107,14 +107,16 @@ if __name__ == "__main__":
         'algorithms': [
             # 'golemEV_golemNV_orig',
             #'notearsLinear',
-            'sortnregressIC',
+            #'sortnregressIC',
             #'sortnregressPOLY',
+            #'notearsLinear',
+            'notearsNonlinear',
         ]
     }
     params['base_dir'] = os.path.join(params['exp_dir'], params['name'])
 
     # create folders
-    utils.set_random_seed(1)
+    utils.set_random_seed(0)
     utils.create_folder(params['exp_dir'])
     utils.create_folder(params['base_dir'])
 

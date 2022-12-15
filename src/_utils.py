@@ -23,8 +23,9 @@ def thresholds(x):
             "pc":                         'bidirected',  # favourable
             "randomregressIC":            -np.inf,
             "sortnregressIC":             -np.inf,
-            "sortnregressPOLY":           -np.inf,
+            "sortnregressPOLY":           'MSE_relative',
             "notearsLinear":              x,
+            "notearsNonlinear":           x,
             "golemEV_orig":               x,
             "golemNV_orig":               x,
             "golemEV_golemNV_orig":       x,
@@ -473,8 +474,8 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
         Ws = np.zeros((m, B.shape[0], B.shape[1]))
         Ws[0, :, :] = W
         for i in range(1, m):
-            _ = simulate_parameter(B, ((-2.0, -0.5), (0.5, 2.0))) #avoid repitition of W due to random seed
-            Ws[i, :, :] = simulate_parameter(B, ((-2.0, -0.5), (0.5, 2.0)))
+            _ = simulate_parameter(B, ((-0.5, -0.1), (0.1, 0.5))) #avoid repitition of W due to random seed
+            Ws[i, :, :] = simulate_parameter(B, ((-0.7, 0.4), (0.4, 0.7)))
         for j in ordered_vertices:
             parents = G.neighbors(j, mode=ig.IN)
             X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j], ws=Ws[:, parents, j])
