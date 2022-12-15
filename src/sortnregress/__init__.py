@@ -6,6 +6,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import (LinearRegression,
                                   LassoLarsIC,
                                   LassoLarsCV)
+from sklearn.metrics import mean_absolute_error as MSE
+from sklearn.model_selection import KFold
 import statsmodels.api as sm
 
 
@@ -58,7 +60,7 @@ def sortnregress(X, regularisation='1-p', random_order=False):
 
     return W
 
-def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
+def sortnregress_poly_heu(X, degree=2, max_indegree=5, random_order=False):
     """Takex n x d data, assumes order is given by increased variance,
     and regresses each node polynomially onto those with lower variance, using
     edge coefficients as structure estimates. Features are eliminated #TODO
@@ -134,5 +136,74 @@ def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
             W[cov, target] = w
         #Possible TODO: make it so interactions only exists for dependent covariates (but regression should assign interactions with small weights if indep)
         #Possible TODO: Develop better heuristic for weigh aggregation (importance for various weight degrees)
+    return W
+
+def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
+    """Takex n x d data, assumes order is given by increased variance,
+    and regresses each node polynomially onto those with lower variance, using
+    edge coefficients as structure estimates. Features are eliminated #TODO
+
+    Args:
+        X (ndarray): data array
+        degree (int, optional): Degree of polynomial regression
+        max_indegree (int, optional): Maximal indegree of every node in network. Defaults to 3.
+        include_interactions (bool, optional): Include covariate interactions in regression step.
+        random_order (bool, optional): If True, performs randomregress instead. Defaults to False.
+    """
+
+    d = X.shape[1]
+    W = np.zeros((d, d))
+    increasing = np.argsort(np.var(X, 0))
+    n_splits = 5
+    kf = KFold(n_splits)
+
+    if random_order:
+        np.random.shuffle(increasing)
+
+    for k in range(1, d):
+        covariates = increasing[:k]
+        target = increasing[k]
+
+        # Feature selection
+        best_model = {"model":"model", "subset":"array", "score":-np.inf} # model, subset, score
+        if len(covariates) <= max_indegree:
+            subsets = [covariates]
+            W1 = np.zeros((len(covariates))) #order analogue to covariates
+            W2 = np.zeros((len(covariates), len(covariates)))
+        else: #will not check lesser subsets, as they will result in lower score
+            subsets = list(itertools.combinations(covariates, max_indegree))
+            W1 = np.zeros((max_indegree))
+            W2 = np.zeros((max_indegree, max_indegree))
+        for subset in subsets:
+            #TODO: Check that polynomial features work correctly with lasso
+            model = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
+                                LassoLarsIC(criterion='bic'))
+            #model selection CV
+            score = 0
+            for train_index, validation_index in kf.split(X):
+                model.fit(X[np.ix_(train_index, subset)], X[train_index, target].ravel())
+                score += model.score(X[np.ix_(validation_index, subset)], X[validation_index, target].ravel()) / n_splits
+            if score > best_model["score"]:
+                best_model["model"] = model
+                best_model["subset"] = subset
+                best_model["score"] = score 
+
+        #compute MSE
+        model_best = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
+                                    LassoLarsIC(criterion='bic'))
+        model_best.fit(X[:, subset], X[:, target].ravel())
+        mse = MSE(X[:, target].ravel(), model_best.predict(X[:, subset]))
+
+        #Make entries in weight matrix for inferred parents
+        model_one_out = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
+                                    LassoLarsIC(criterion='bic'))
+        if len(subset) > 1:
+            for p in subset:
+                one_out = list(subset)
+                one_out.remove(p)
+                model_one_out.fit(X[:, one_out], X[:, target].ravel())
+                mse_one_out = MSE(X[:, target].ravel(), model_one_out.predict(X[:, one_out]))
+                W[p, target] = (mse_one_out - mse) / mse
+
     return W
 
