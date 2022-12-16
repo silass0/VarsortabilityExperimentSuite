@@ -15,52 +15,52 @@ import _utils as utils
 from hashlib import md5
 
 
-## Parameters
-data_params = {
-        "n_repetitions": 3,
-        "graphs": ["ER-2"],
-        "noise_distributions": [
-            # utils.NoiseDistribution("gauss", (1, 1)),
-            # utils.NoiseDistribution("gauss", (0.5, 2)),
-            utils.NoiseDistribution("polynomial-2-gauss", (0.5, 2)),
-            # utils.NoiseDistribution("mlp", (0.5, 2)),
-            # utils.NoiseDistribution("exp", (0.5, 2)),
-            # utils.NoiseDistribution("gumbel", (0.5, 2)),
-        ],
-        "edge_weights":[(.5, 2)],
-        "n_nodes": [5, 10],
-        "n_obs": [1000],
-}
+# ## Parameters
+# data_params = {
+#         "n_repetitions": 3,
+#         "graphs": ["ER-2"],
+#         "noise_distributions": [
+#             # utils.NoiseDistribution("gauss", (1, 1)),
+#             # utils.NoiseDistribution("gauss", (0.5, 2)),
+#             utils.NoiseDistribution("polynomial-2-gauss", (0.5, 2)),
+#             # utils.NoiseDistribution("mlp", (0.5, 2)),
+#             # utils.NoiseDistribution("exp", (0.5, 2)),
+#             # utils.NoiseDistribution("gumbel", (0.5, 2)),
+#         ],
+#         "edge_weights":[(.5, 2)],
+#         "n_nodes": [5, 10],
+#         "n_obs": [1000],
+# }
 
-params = {
-        'MEC': False,
-        'exp_dir': os.path.join("src", "experiments"),
-        'name': "test_exp_folder",
-        'thres': 0.3,
-        'thres_type': "standard",
-        'algorithms': [
-            #'golemEV_golemNV_orig',
-            #'notearsLinear',
-            'sortnregressIC',
-            #'sortnregressIC_C',
-            #'sortnregressPOLY',
-        ]
-    }
+# params = {
+#         'MEC': False,
+#         'exp_dir': os.path.join("src", "experiments"),
+#         'name': "test_exp_folder",
+#         'thres': 0.3,
+#         'thres_type': "standard",
+#         'algorithms': [
+#             #'golemEV_golemNV_orig',
+#             #'notearsLinear',
+#             'sortnregressIC',
+#             #'sortnregressIC_C',
+#             #'sortnregressPOLY',
+#         ]
+#     }
 
-params['base_dir'] = os.path.join(params['exp_dir'], params['name'])
+# params['base_dir'] = os.path.join(params['exp_dir'], params['name'])
 
-scaler = Scalers.Identity()
+# scaler = Scalers.Identity()
 
-#create folders
-utils.set_random_seed(2)
-utils.create_folder(params['exp_dir'])
-utils.create_folder(params['base_dir'])
+# #create folders
+# utils.set_random_seed(2)
+# utils.create_folder(params['exp_dir'])
+# utils.create_folder(params['base_dir'])
 
-### Generate data
+# ### Generate data
 
-dg = DataGenerator(params["name"], params["base_dir"], scaler=scaler)
+# dg = DataGenerator(params["name"], params["base_dir"], scaler=scaler)
 
-dg.generate_and_save(**data_params)
+# dg.generate_and_save(**data_params)
 
 
 # ### Check output
@@ -103,6 +103,12 @@ dg.generate_and_save(**data_params)
     
 #     print(evals['W_true'].iloc[10])
 
+path = "/home/silas/Documents/git/VarsortabilityExperimentSuite/src/experiments/default/default_raw/_eval/standard_0.3.csv"
+
+with open(path, "r") as file:
+    res = utils.load_results(file)
+
+print(res)
 
 # ### Visualize evalution
 
