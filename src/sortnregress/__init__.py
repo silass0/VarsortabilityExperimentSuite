@@ -204,6 +204,7 @@ def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
                 model_one_out.fit(X[:, one_out], X[:, target].ravel())
                 mse_one_out = MSE(X[:, target].ravel(), model_one_out.predict(X[:, one_out]))
                 W[p, target] = (mse_one_out - mse) / mse
+        #TODO: ELIF len(subset)==1 ? 
 
     return W
 

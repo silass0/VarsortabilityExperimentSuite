@@ -405,7 +405,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     Args:
         W (np.ndarray): [d, d] weighted linear adj matrix of DAG
         n (int): num of samples
-        sem_type (str): polynomial-m, mlp, mim, gp, gp-add, gp-add-lach Lachapelle A.5
+        sem_type (str): quadratic, mlp, mim, gp, gp-add, gp-add-lach Lachapelle A.5
         noise_scale (np.ndarray): scale parameter of additive noise, default all ones
 
     Returns:
@@ -422,17 +422,17 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
                 # source nodes have [1,2] variance here
                 z = np.random.normal(scale=np.sqrt(2.5)*scale, size=n)
             return z
-        if sem_type.split("-")[0] == "polynomial":
+        if sem_type.split("-")[0] == "quadratic":
             # gaussian case covered by first assignment
-            if sem_type.split("-")[2] == 'exp':
+            if sem_type.split("-")[1] == 'exp':
                 z = np.random.exponential(scale=scale, size=n)
-            elif sem_type.split("-")[2] == 'gumbel':
+            elif sem_type.split("-")[1] == 'gumbel':
                 a = np.sqrt(6)/np.pi * scale
                 z = np.random.gumbel(scale=a, size=n)
-            elif sem_type.split("-")[2] == 'uniform':
+            elif sem_type.split("-")[1] == 'uniform':
                 a = scale * np.sqrt(3)
                 z = np.random.uniform(low=-a, high=a, size=n) 
-            x = sum([X**(i+1.0) @ ws[i,:] for i in range(int(sem_type.split("-")[1]))]) + z
+            x = sum([X**(i+1.0) @ ws[i,:] for i in range(2)]) + z
         elif sem_type == 'mlp':
             hidden = 100
             W1 = np.random.uniform(low=0.5, high=2.0, size=[pa_size, hidden])
@@ -469,8 +469,8 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     G = ig.Graph.Adjacency(B.tolist())
     ordered_vertices = G.topological_sorting()
     assert len(ordered_vertices) == d
-    if sem_type.split("-")[0] == "polynomial":
-        m = int(sem_type.split("-")[1])
+    if sem_type.split("-")[0] == "quadratic": #TODO or interactions - make if statement
+        m = 2 #for extension purposes
         Ws = np.zeros((m, B.shape[0], B.shape[1]))
         Ws[0, :, :] = W
         for i in range(1, m):
