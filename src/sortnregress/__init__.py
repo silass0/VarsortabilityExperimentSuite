@@ -168,12 +168,8 @@ def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
         best_model = {"model":"model", "subset":"array", "score":-np.inf} # model, subset, score
         if len(covariates) <= max_indegree:
             subsets = [covariates]
-            W1 = np.zeros((len(covariates))) #order analogue to covariates
-            W2 = np.zeros((len(covariates), len(covariates)))
         else: #will not check lesser subsets, as they will result in lower score
             subsets = list(itertools.combinations(covariates, max_indegree))
-            W1 = np.zeros((max_indegree))
-            W2 = np.zeros((max_indegree, max_indegree))
         for subset in subsets:
             #TODO: Check that polynomial features work correctly with lasso
             model = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
@@ -187,6 +183,8 @@ def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
                 best_model["model"] = model
                 best_model["subset"] = subset
                 best_model["score"] = score 
+
+        subset = best_model["subset"]
 
         #compute MSE
         model_best = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
@@ -204,7 +202,8 @@ def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
                 model_one_out.fit(X[:, one_out], X[:, target].ravel())
                 mse_one_out = MSE(X[:, target].ravel(), model_one_out.predict(X[:, one_out]))
                 W[p, target] = (mse_one_out - mse) / mse
-        #TODO: ELIF len(subset)==1 ? 
+        elif len(subset) == 1:
+            W[subset[0], target] = 1.0
 
     return W
 

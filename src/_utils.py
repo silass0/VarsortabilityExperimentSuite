@@ -405,7 +405,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     Args:
         W (np.ndarray): [d, d] weighted linear adj matrix of DAG
         n (int): num of samples
-        sem_type (str): quadratic, mlp, mim, gp, gp-add, gp-add-lach Lachapelle A.5
+        sem_type (str): quadratic, quadraticInts, mlp, mim, gp, gp-add, gp-add-lach Lachapelle A.5
         noise_scale (np.ndarray): scale parameter of additive noise, default all ones
 
     Returns:
@@ -413,6 +413,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     """
     B = np.where(W!=0, 1, 0)
     assert np.sum(B) == np.count_nonzero(B), 'Adjacency matrix can only contain 0s or 1s.'
+    d = B.shape[0]
     def _simulate_single_equation(X, scale, ws=None):
         """X: [n, num of parents], x: [n]"""
         z = np.random.normal(scale=scale, size=n)
@@ -422,7 +423,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
                 # source nodes have [1,2] variance here
                 z = np.random.normal(scale=np.sqrt(2.5)*scale, size=n)
             return z
-        if sem_type.split("-")[0] == "quadratic":
+        if sem_type.split("-")[0] in ["quadratic", "quadraticInts"]:
             # gaussian case covered by first assignment
             if sem_type.split("-")[1] == 'exp':
                 z = np.random.exponential(scale=scale, size=n)
@@ -433,6 +434,14 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
                 a = scale * np.sqrt(3)
                 z = np.random.uniform(low=-a, high=a, size=n) 
             x = sum([X**(i+1.0) @ ws[i,:] for i in range(2)]) + z
+            if sem_type.split("-")[0] == "quadraticInts" and pa_size >= 2: #add pairwise interactions
+                P = np.triu(np.ones((pa_size, pa_size)), k=1) #pairs of interactions
+                W_ints = simulate_parameter(P, ((-0.4, -0.1), (-0.1, 0.4))) 
+                for i in range(pa_size):
+                    for j in range(pa_size):
+                        if W_ints[i,j] != 0:
+                            x += (X[:,i] * X[:,j]) * W_ints[i,j]
+
         elif sem_type == 'mlp':
             hidden = 100
             W1 = np.random.uniform(low=0.5, high=2.0, size=[pa_size, hidden])
@@ -461,7 +470,6 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
             raise ValueError('unknown sem type')
         return x
 
-    d = B.shape[0]
     scale_vec = noise_scale if (noise_scale is not None) else np.ones(d)
     if sem_type == 'gp-add-lach':
         scale_vec = np.sqrt(np.random.uniform(low=.4, high=.8, size=d))        
@@ -469,13 +477,13 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
     G = ig.Graph.Adjacency(B.tolist())
     ordered_vertices = G.topological_sorting()
     assert len(ordered_vertices) == d
-    if sem_type.split("-")[0] == "quadratic": #TODO or interactions - make if statement
+    if sem_type.split("-")[0] in ["quadratic", "quadraticInts"]:
         m = 2 #for extension purposes
         Ws = np.zeros((m, B.shape[0], B.shape[1]))
         Ws[0, :, :] = W
         for i in range(1, m):
             _ = simulate_parameter(B, ((-0.5, -0.1), (0.1, 0.5))) #avoid repitition of W due to random seed
-            Ws[i, :, :] = simulate_parameter(B, ((-0.7, 0.4), (0.4, 0.7)))
+            Ws[i, :, :] = simulate_parameter(B, ((-0.7, -0.4), (0.4, 0.7)))
         for j in ordered_vertices:
             parents = G.neighbors(j, mode=ig.IN)
             X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j], ws=Ws[:, parents, j])

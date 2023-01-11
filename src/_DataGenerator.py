@@ -44,7 +44,7 @@ class DataGenerator:
             noise_scales = np.random.uniform(l, u, size=description.n_nodes)
         else:
             noise_scales = None
-        if description.noise in ['gp-add', 'mim', 'mlp', 'gp', 'gp-add-lach'] or description.noise.split('-')[0] == 'quadratic':
+        if description.noise in ['gp-add', 'mim', 'mlp', 'gp', 'gp-add-lach'] or description.noise.split('-')[0] in ['quadratic', 'quadraticInts']:
             data = utils.simulate_nonlinear_sem(W_true,
                                              description.n_obs,
                                              sem_type=description.noise,
