@@ -183,9 +183,14 @@ class ExperimentRunner:
         return sortnregress(dataset.data, regularisation="bic", random_order=False)
 
     @_algo_decorator
-    def sortnregressPOLY(self, dataset):
-        from sortnregress import sortnregress_poly
-        return sortnregress_poly(dataset.data, random_order=False)
+    def sortnregressQUAD(self, dataset):
+        from sortnregress import sortnregress_quad
+        return sortnregress_quad(dataset.data, random_order=False)
+
+    @_algo_decorator
+    def sortnregressQUADinters(self, dataset):
+        from sortnregress import sortnregress_quad
+        return sortnregress_quad(dataset.data, include_interactions=True, random_order=False)
 
     @_algo_decorator
     def empty(self, dataset):

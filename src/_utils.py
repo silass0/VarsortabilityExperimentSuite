@@ -23,7 +23,8 @@ def thresholds(x):
             "pc":                         'bidirected',  # favourable
             "randomregressIC":            -np.inf,
             "sortnregressIC":             -np.inf,
-            "sortnregressPOLY":           'MSE_relative',
+            "sortnregressQUAD":           'MSE_relative',
+            "sortnregressQUADinters":     'MSE_relative',
             "notearsLinear":              x,
             "notearsNonlinear":           x,
             "golemEV_orig":               x,
@@ -152,6 +153,25 @@ def obtaincausalorder(Bin):
         B = np.delete(B, succ, 1)
     return pi
 
+class quadratic_features:
+    def __init__(self) -> None:
+        pass
+
+    def fit(self, X, y):
+        return self
+
+    def transform(self, X):
+        """Transform linear dataset with features x1, x2, ... to quadratic dataset with
+        features x1, x2, ..., x1^2, x2^2, ...
+        Args:
+            X (ndarray): Data array
+        """
+        X_out = np.zeros((X.shape[0], X.shape[1]*2))
+
+        X_out[:, :X.shape[1]] = X.copy() 
+        X_out[:, X.shape[1]:] = X.copy()**2.0
+
+        return X_out
 
 def varsortability(X, W, tol=1e-9):
     """ Takes n x d data and a d x d adjaceny matrix,

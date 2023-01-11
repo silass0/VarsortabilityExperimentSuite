@@ -90,7 +90,7 @@ if __name__ == "__main__":
     data_params = {
         "n_repetitions": 10,
         "graphs": ["ER-2"],
-        "noise_distributions": [utils.NoiseDistribution("quadraticInts-gauss", (0.4, 0.7))], #polynomial-2-gauss, quadraticInts-gauss
+        "noise_distributions": [utils.NoiseDistribution("quadratic-gauss", (0.4, 0.7))], #polynomial-2-gauss, quadraticInts-gauss
         "edge_weights":[(0.2, 0.5)],
         "n_nodes": [10],
         "n_obs": [1000],  # for less than ~1000, the tetrad algos fail
@@ -108,7 +108,8 @@ if __name__ == "__main__":
             # 'golemEV_golemNV_orig',
             #'notearsLinear',
             'sortnregressIC',
-            'sortnregressPOLY',
+            'sortnregressQUAD',
+            #'sortnregressQUADinters',
             #'notearsLinear',
             #'notearsNonlinear',
         ]

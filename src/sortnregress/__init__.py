@@ -60,6 +60,82 @@ def sortnregress(X, regularisation='1-p', random_order=False):
 
     return W
 
+
+def sortnregress_quad(X, degree=2, max_indegree=5, include_interactions=False, random_order=False):
+    """Takex n x d data, assumes order is given by increased variance,
+    and regresses each node polynomially onto those with lower variance, using
+    edge coefficients as structure estimates. Features are eliminated #TODO
+
+    Args:
+        X (ndarray): data array
+        degree (int, optional): Degree of polynomial regression
+        max_indegree (int, optional): Maximal indegree of every node in network. Defaults to 5.
+        include_interactions (bool, optional): Include covariate interactions in regression step.
+        random_order (bool, optional): If True, performs randomregress instead. Defaults to False.
+    """
+    
+    d = X.shape[1]
+    W = np.zeros((d, d))
+    X_intercept = np.ones((X.shape[0], 1))
+    increasing = np.argsort(np.var(X, 0))
+    n_splits = 5
+    kf = KFold(n_splits)
+
+    if random_order:
+        np.random.shuffle(increasing)
+
+    if include_interactions:
+        model = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
+                                LassoLarsIC(criterion='bic'))
+    else:
+        from _utils import quadratic_features
+        model = make_pipeline(quadratic_features(),
+                            LassoLarsIC(criterion='bic'))
+    model_no_par = LassoLarsIC(criterion='bic', fit_intercept=False)
+
+    for k in range(1, d):
+        covariates = increasing[:k]
+        target = increasing[k]
+
+        subsets = [[c] for c in covariates]
+        for s in range(2, min(len(covariates), max_indegree)+1):
+            subsets += list(itertools.combinations(covariates, s))
+
+        #First check: no parents. 
+        score = 0
+        for train_index, validation_index in kf.split(X):
+            model_no_par.fit(X_intercept[train_index,:], X[train_index, target].ravel())
+            score += model_no_par.score(X_intercept[validation_index,:], X[validation_index, target].ravel()) / n_splits
+        best_model = {"subset":[], "score":score} # subset, score
+        #Next check: all subsets up to certain size (prioritizing smaller subsets via a threshold)
+        for subset in subsets:
+            #model selection CV
+            score = 0
+            for train_index, validation_index in kf.split(X):
+                model.fit(X[np.ix_(train_index, subset)], X[train_index, target].ravel())
+                score += model.score(X[np.ix_(validation_index, subset)], X[validation_index, target].ravel()) / n_splits
+            if score - best_model["score"] > 0.01: #choose new subset if threshold is reached
+                best_model["subset"] = subset
+                best_model["score"] = score 
+
+        subset = best_model["subset"]
+
+        if len(subset) > 1:
+            #compute MSE
+            model.fit(X[:, subset], X[:, target].ravel())
+            mse = MSE(X[:, target].ravel(), model.predict(X[:, subset]))
+            #Make entries in weight matrix for inferred parents
+            for p in subset:
+                one_out = list(subset)
+                one_out.remove(p)
+                model.fit(X[:, one_out], X[:, target].ravel())
+                mse_one_out = MSE(X[:, target].ravel(), model.predict(X[:, one_out]))
+                W[p, target] = (mse_one_out - mse) / mse
+        elif len(subset) == 1:
+            W[subset[0], target] = 1.0 
+    return W
+
+
 def sortnregress_poly_heu(X, degree=2, max_indegree=5, random_order=False):
     """Takex n x d data, assumes order is given by increased variance,
     and regresses each node polynomially onto those with lower variance, using
@@ -69,7 +145,7 @@ def sortnregress_poly_heu(X, degree=2, max_indegree=5, random_order=False):
         X (ndarray): data array
         degree (int, optional): Degree of polynomial regression
         max_indegree (int, optional): Maximal indegree of every node in network. Defaults to 3.
-        include_interactions (bool, optional): Include covariate interactions in regression step.
+        include_interactions (bool, optional): Include covariate interactions in regression step. Defaults to False.
         random_order (bool, optional): If True, performs randomregress instead. Defaults to False.
     """
 
@@ -137,73 +213,3 @@ def sortnregress_poly_heu(X, degree=2, max_indegree=5, random_order=False):
         #Possible TODO: make it so interactions only exists for dependent covariates (but regression should assign interactions with small weights if indep)
         #Possible TODO: Develop better heuristic for weigh aggregation (importance for various weight degrees)
     return W
-
-def sortnregress_poly(X, degree=2, max_indegree=5, random_order=False):
-    """Takex n x d data, assumes order is given by increased variance,
-    and regresses each node polynomially onto those with lower variance, using
-    edge coefficients as structure estimates. Features are eliminated #TODO
-
-    Args:
-        X (ndarray): data array
-        degree (int, optional): Degree of polynomial regression
-        max_indegree (int, optional): Maximal indegree of every node in network. Defaults to 3.
-        include_interactions (bool, optional): Include covariate interactions in regression step.
-        random_order (bool, optional): If True, performs randomregress instead. Defaults to False.
-    """
-
-    d = X.shape[1]
-    W = np.zeros((d, d))
-    increasing = np.argsort(np.var(X, 0))
-    n_splits = 5
-    kf = KFold(n_splits)
-
-    if random_order:
-        np.random.shuffle(increasing)
-
-    for k in range(1, d):
-        covariates = increasing[:k]
-        target = increasing[k]
-
-        # Feature selection
-        best_model = {"model":"model", "subset":"array", "score":-np.inf} # model, subset, score
-        if len(covariates) <= max_indegree:
-            subsets = [covariates]
-        else: #will not check lesser subsets, as they will result in lower score
-            subsets = list(itertools.combinations(covariates, max_indegree))
-        for subset in subsets:
-            #TODO: Check that polynomial features work correctly with lasso
-            model = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
-                                LassoLarsIC(criterion='bic'))
-            #model selection CV
-            score = 0
-            for train_index, validation_index in kf.split(X):
-                model.fit(X[np.ix_(train_index, subset)], X[train_index, target].ravel())
-                score += model.score(X[np.ix_(validation_index, subset)], X[validation_index, target].ravel()) / n_splits
-            if score > best_model["score"]:
-                best_model["model"] = model
-                best_model["subset"] = subset
-                best_model["score"] = score 
-
-        subset = best_model["subset"]
-
-        #compute MSE
-        model_best = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
-                                    LassoLarsIC(criterion='bic'))
-        model_best.fit(X[:, subset], X[:, target].ravel())
-        mse = MSE(X[:, target].ravel(), model_best.predict(X[:, subset]))
-
-        #Make entries in weight matrix for inferred parents
-        model_one_out = make_pipeline(PolynomialFeatures(degree=degree, include_bias=False),
-                                    LassoLarsIC(criterion='bic'))
-        if len(subset) > 1:
-            for p in subset:
-                one_out = list(subset)
-                one_out.remove(p)
-                model_one_out.fit(X[:, one_out], X[:, target].ravel())
-                mse_one_out = MSE(X[:, target].ravel(), model_one_out.predict(X[:, one_out]))
-                W[p, target] = (mse_one_out - mse) / mse
-        elif len(subset) == 1:
-            W[subset[0], target] = 1.0
-
-    return W
-
