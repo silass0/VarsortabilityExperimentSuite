@@ -1,4 +1,7 @@
 # Content
+
+**This is code base is a fork with extended work for the purpose of my bachelor thesis. Run run_experiment to reproduce results (setting 1, quadratic ANM) -Silas Nøstvik**
+
 This repository comprises the **basic experimental set-up for the comparison of causal structure learning algorithms** as shown in
 
 [1] Reisach, A. G., Seiler, C., & Weichwald, S. (2021). [Beware of the Simulated DAG! Causal Discovery Benchmarks May Be Easy To Game](https://proceedings.neurips.cc/paper/2021/file/e987eff4a7c7b7e580d659feb6f60c1a-Paper.pdf).

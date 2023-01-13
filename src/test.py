@@ -108,7 +108,7 @@ path = "/home/silas/Documents/git/VarsortabilityExperimentSuite/src/experiments/
 with open(path, "r") as file:
     res = utils.load_results(file)
 
-print(res)
+print(res["varsortability"])
 
 # ### Visualize evalution
 

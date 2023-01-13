@@ -456,7 +456,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
             x = sum([X**(i+1.0) @ ws[i,:] for i in range(2)]) + z
             if sem_type.split("-")[0] == "quadraticInts" and pa_size >= 2: #add pairwise interactions
                 P = np.triu(np.ones((pa_size, pa_size)), k=1) #pairs of interactions
-                W_ints = simulate_parameter(P, ((-0.4, -0.1), (-0.1, 0.4))) 
+                W_ints = simulate_parameter(P, ((-0.5, -0.1), (0.1, 0.5))) 
                 for i in range(pa_size):
                     for j in range(pa_size):
                         if W_ints[i,j] != 0:
@@ -503,7 +503,7 @@ def simulate_nonlinear_sem(W, n, sem_type, noise_scale=None):
         Ws[0, :, :] = W
         for i in range(1, m):
             _ = simulate_parameter(B, ((-0.5, -0.1), (0.1, 0.5))) #avoid repitition of W due to random seed
-            Ws[i, :, :] = simulate_parameter(B, ((-0.7, -0.4), (0.4, 0.7)))
+            Ws[i, :, :] = simulate_parameter(B, ((-0.5, -0.1), (0.1, 0.5)))
         for j in ordered_vertices:
             parents = G.neighbors(j, mode=ig.IN)
             X[:, j] = _simulate_single_equation(X[:, parents], scale_vec[j], ws=Ws[:, parents, j])

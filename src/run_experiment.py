@@ -14,7 +14,7 @@ import _utils as utils
 
 def data(params, scaler, data_params):
     """ Data Generation """
-    dg = DataGenerator(params['version_name'], params['base_dir'], scaler=scaler)
+    dg = DataGenerator(params['version_name'], params['base_dir'], scaler=scaler, random_seed=True)
     dg.generate_and_save(**data_params)
  
  
@@ -48,7 +48,7 @@ def visualize(params, data_params):
             viz.boxplot(acc_measure=acc_measure, filters={
                 "n_nodes": n_nodes, 
                 "noise": noise, 
-                "noise_variance": "(0.5, 2)",
+                "noise_variance": "(0.1, 0.5)",
                 "graph": "ER-2"})
 
  
@@ -66,8 +66,8 @@ def viz_compare(params, data_params, name1, name2):
     acc_measures = ["shd", "tpr", "fpr"]  # ["sid", "shd"]
     if params['MEC']: acc_measures += ["mec_sid_upper", "mec_shd"]
     for acc_measure in acc_measures:
-        for noise in [["gauss"], ["exp"], ["gumbel"], ["uniform"], ["quadratic-gauss"], ["quadraticInts-gauss"]]:
-            for var in ["(1, 1)", "(0.4, 0.7)", "(2, 3)"]:
+        for noise in [["gauss"], ["exp"], ["mlp"], ["uniform"], ["quadratic-gauss"], ["quadraticInts-gauss"]]:
+            for var in ["(0.5, 2.0)", "(0.1, 0.5)", "(0.25, 1.0)", "(0.25, 0.75)"]:
                 for graph in ["ER-2", "ER-4", "SF-4"]:
                     viz.boxplot(acc_measure=acc_measure, filters={
                         "n_nodes": n_nodes, 
@@ -90,8 +90,8 @@ if __name__ == "__main__":
     data_params = {
         "n_repetitions": 10,
         "graphs": ["ER-2"],
-        "noise_distributions": [utils.NoiseDistribution("quadratic-gauss", (0.4, 0.7))], #polynomial-2-gauss, quadraticInts-gauss
-        "edge_weights":[(0.2, 0.5)],
+        "noise_distributions": [utils.NoiseDistribution("quadratic-gauss", (0.1, 0.5))], #quadratic-gauss, quadraticInts-gauss
+        "edge_weights":[(0.1, 0.5)], #(0.25, 0.75)
         "n_nodes": [10],
         "n_obs": [1000],  # for less than ~1000, the tetrad algos fail
     }
@@ -106,12 +106,11 @@ if __name__ == "__main__":
         # algorithms from _ExperimentRunner as strings
         'algorithms': [
             # 'golemEV_golemNV_orig',
-            #'notearsLinear',
             'sortnregressIC',
             'sortnregressQUAD',
             #'sortnregressQUADinters',
-            #'notearsLinear',
-            #'notearsNonlinear',
+            'notearsLinear',
+            'notearsNonlinear',
         ]
     }
     params['base_dir'] = os.path.join(params['exp_dir'], params['name'])
@@ -125,6 +124,13 @@ if __name__ == "__main__":
     run(params.copy(), "_raw", Scalers.Identity(), data_params)
     run(params, "_normalized", Scalers.Normalizer(), data_params)
     viz_compare(params, data_params, "_raw", "_normalized")
+
+    path = "/home/dudegirl/Documents/git/VarsortabilityExperimentSuite/src/experiments/default/default_raw/_eval/standard_0.3.csv"
+    with open(path, "r") as file:
+        res = utils.load_results(file)
+
+    print(res["varsortability"])
+    print("avg. varsortability:", res["varsortability"].iloc[:10].mean())
 
     # kill any open processes
     ray.shutdown()
